@@ -8,8 +8,7 @@
     border-radius: 4px;
     background: $color-white;
     user-select: none;
-    overflow: hidden;
-    cursor: default;
+    cursor: pointer;
     box-shadow: 2px 5px 20px -3px rgba($color-primary-dark, 0.2);
     transition: all 300ms ease;
 
