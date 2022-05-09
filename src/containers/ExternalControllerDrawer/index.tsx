@@ -8,26 +8,26 @@ import { useI18n, useAPIInfo, identityAtom } from '@stores'
 import { localStorageAtom } from '@stores/request'
 import './style.scss'
 
-export default function ExternalController () {
+export default function ExternalController() {
     const { translation } = useI18n()
     const { t } = translation('Settings')
-    const { hostname, port, secret } = useAPIInfo()
+    const { server, secret } = useAPIInfo()
     const [identity, setIdentity] = useAtom(identityAtom)
     const [value, set] = useObject({
-        hostname: '',
-        port: '',
+        server: '',
         secret: '',
     })
 
     useEffect(() => {
-        set({ hostname, port, secret })
-    }, [hostname, port, secret, set])
+        set({ server, secret })
+    }, [server, secret, set])
 
     const setter = useUpdateAtom(localStorageAtom)
 
-    function handleOk () {
-        const { hostname, port, secret } = value
-        setter([{ hostname, port, secret }])
+    function handleOk() {
+        const { server, secret } = value
+        setter([{ server, secret }])
+        setIdentity(true)
     }
 
     return (
@@ -42,35 +42,28 @@ export default function ExternalController () {
                 <p>{t('externalControllerSetting.note')}</p>
             </Alert>
             <div className="flex items-center">
-                <span className="font-bold my-1 w-14 md:my-3">{t('externalControllerSetting.host')}</span>
+                <span className="font-bold my-1 w-14 md:my-3">
+                    {t('externalControllerSetting.server')}
+                </span>
                 <Input
                     className="flex-1 my-1 md:my-3"
                     align="left"
                     inside={true}
-                    value={value.hostname}
-                    onChange={hostname => set('hostname', hostname)}
+                    value={value.server}
+                    onChange={(server) => set('server', server)}
                     onEnter={handleOk}
                 />
             </div>
             <div className="flex items-center">
-                <div className="font-bold my-1 w-14 md:my-3">{t('externalControllerSetting.port')}</div>
-                <Input
-                    className="flex-1 my-1 w-14 md:my-3"
-                    align="left"
-                    inside={true}
-                    value={value.port}
-                    onChange={port => set('port', port)}
-                    onEnter={handleOk}
-                />
-            </div>
-            <div className="flex items-center">
-                <div className="font-bold my-1 w-14 md:my-3">{t('externalControllerSetting.secret')}</div>
+                <div className="font-bold my-1 w-14 md:my-3">
+                    {t('externalControllerSetting.secret')}
+                </div>
                 <Input
                     className="flex-1 my-1 w-14 md:my-3"
                     align="left"
                     inside={true}
                     value={value.secret}
-                    onChange={secret => set('secret', secret)}
+                    onChange={(secret) => set('secret', secret)}
                     onEnter={handleOk}
                 />
             </div>
