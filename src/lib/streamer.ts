@@ -34,7 +34,7 @@ export class StreamReader<T> {
 
         const url = new URL(this.url)
 
-        this.connection = new WebSocket(`${url.origin}${url.pathname}`)
+        this.connection = new WebSocket(url)
         this.connection.addEventListener('message', (msg) => {
             const data = JSON.parse(msg.data)
             this.EE.emit('data', [data])
