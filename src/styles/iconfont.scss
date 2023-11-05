@@ -5,7 +5,10 @@
 
 @font-face {
     font-family: "clash-iconfont";
-    src: url('http://at.alicdn.com/t/font_841708_ok9czskbhel.ttf?t=1576162884356') format('truetype');
+    // src: url('http://at.alicdn.com/t/font_841708_ok9czskbhel.ttf?t=1576162884356') format('truetype');
+    // src: url('//at.alicdn.com/t/font_841708_6gtmjlak9k2.ttf?t=1551607902712') format('truetype');
+    // src: url('./font.ttf') format('truetype');
+    src: url('../styles/font.ttf') format('truetype');
 }
 
 .clash-iconfont {
