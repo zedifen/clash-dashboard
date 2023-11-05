@@ -1,10 +1,13 @@
-import React, { useState, useMemo, useLayoutEffect, useEffect } from 'react'
+import React, { useMemo, useLayoutEffect, useCallback } from 'react'
+import { ResultAsync } from 'neverthrow'
+import type{ AxiosError } from 'axios'
 import classnames from 'classnames'
 import { BaseComponentProps } from '@models'
+import { useProxy } from '@stores'
 import { getProxyDelay, Proxy as IProxy } from '@lib/request'
 import EE, { Action } from '@lib/event'
 import { isClashX, jsBridge } from '@lib/jsBridge'
-import { to } from '@lib/helper'
+
 import './style.scss'
 
 interface ProxyProps extends BaseComponentProps {
@@ -13,14 +16,14 @@ interface ProxyProps extends BaseComponentProps {
 
 const TagColors = {
     '#909399': 0,
-    '#00c520': 150,
-    '#ff9a28': 500,
+    '#00c520': 260,
+    '#ff9a28': 600,
     '#ff3e5e': Infinity
 }
 
 async function getDelay (name: string) {
     if (isClashX()) {
-        const delay = await jsBridge.getProxyDelay(name)
+        const delay = await jsBridge?.getProxyDelay(name) ?? 0
         return delay
     }
 
@@ -30,24 +33,37 @@ async function getDelay (name: string) {
 
 export function Proxy (props: ProxyProps) {
     const { config, className } = props
-    const [delay, setDelay] = useState(0)
+    const { set } = useProxy()
 
-    async function speedTest () {
-        const [delay, err] = await to(getDelay(config.name))
-        setDelay(err ? 0 : delay)
-    }
+    const speedTest = useCallback(async function () {
+        const result = await ResultAsync.fromPromise(getDelay(config.name), e => e as AxiosError)
 
-    useEffect(() => {
-        setDelay(config.history.length ? config.history.slice(-1)[0].delay : 0)
-    }, [config])
+        const validDelay = result.isErr() ? 0 : result.value
+        set(draft => {
+            const proxy = draft.proxies.find(p => p.name === config.name)
+            if (proxy) {
+                proxy.history.push({ time: Date.now().toString(), delay: validDelay })
+            }
+        })
+    }, [config.name, set])
+
+    const delay = useMemo(
+        () => config.history?.length ? config.history.slice(-1)[0].delay : 0,
+        [config]
+    )
 
     useLayoutEffect(() => {
         EE.subscribe(Action.SPEED_NOTIFY, speedTest)
         return () => EE.unsubscribe(Action.SPEED_NOTIFY, speedTest)
-    }, [])
+    }, [speedTest])
 
     const hasError = useMemo(() => delay === 0, [delay])
-    const color = useMemo(() => Object.keys(TagColors).find(threshold => delay <= TagColors[threshold]), [delay])
+    const color = useMemo(() =>
+        Object.keys(TagColors).find(
+            threshold => delay <= TagColors[threshold as keyof typeof TagColors]
+        ),
+        [delay]
+    )
 
     const backgroundColor = hasError ? undefined : color
     return (

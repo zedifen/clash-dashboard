@@ -1,9 +1,10 @@
-import React, { useRef, useLayoutEffect } from 'react'
+import React, { useRef, useLayoutEffect, MouseEvent } from 'react'
 import classnames from 'classnames'
 import { createPortal } from 'react-dom'
 import { BaseComponentProps } from '@models'
 import { Button } from '@components'
 import { noop } from '@lib/helper'
+import { useI18n } from '@stores'
 import './style.scss'
 
 interface ModalProps extends BaseComponentProps {
@@ -37,7 +38,7 @@ export function Modal (props: ModalProps) {
         show = true,
         title = 'Modal',
         size = 'small',
-        footer= true,
+        footer = true,
         onOk = noop,
         onClose = noop,
         bodyClassName,
@@ -47,15 +48,19 @@ export function Modal (props: ModalProps) {
         children
     } = props
 
+    const { translation } = useI18n()
+    const { t } = translation('Modal')
+
     const portalRef = useRef<HTMLDivElement>(document.createElement('div'))
-    const maskRef = useRef<HTMLDivElement>()
+    const maskRef = useRef<HTMLDivElement>(null)
 
     useLayoutEffect(() => {
-        document.body.appendChild(portalRef.current)
-        return () => document.body.removeChild(portalRef.current)
+        const current = portalRef.current
+        document.body.appendChild(current)
+        return () => { document.body.removeChild(current) }
     }, [])
 
-    function handleMaskClick (e) {
+    function handleMaskMouseDown (e: MouseEvent) {
         if (e.target === maskRef.current) {
             onClose()
         }
@@ -65,7 +70,7 @@ export function Modal (props: ModalProps) {
         <div
             className={classnames('modal-mask', { 'modal-show': show })}
             ref={maskRef}
-            onClick={handleMaskClick}
+            onMouseDown={handleMaskMouseDown}
         >
             <div
                 className={classnames('modal', `modal-${size}`, className)}
@@ -79,8 +84,8 @@ export function Modal (props: ModalProps) {
                 {
                     footer && (
                         <div className="footer">
-                            <Button onClick={() => onClose()}>取 消</Button>
-                            <Button type="primary" onClick={() => onOk()}>确 定</Button>
+                            <Button onClick={() => onClose()}>{ t('cancel') }</Button>
+                            <Button type="primary" onClick={() => onOk()}>{ t('ok') }</Button>
                         </div>
                     )
                 }

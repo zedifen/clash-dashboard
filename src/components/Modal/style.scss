@@ -1,5 +1,3 @@
-@import '~@styles/variables';
-
 $width: 400px;
 $bigWidth: 600px;
 
@@ -19,7 +17,7 @@ $mobileBigWidth: 480px;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 11;
+    z-index: 9999;
 
     .modal {
         margin-top: -50px;

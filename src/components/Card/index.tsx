@@ -3,9 +3,9 @@ import { BaseComponentProps } from '@models/BaseProps'
 import classnames from 'classnames'
 import './style.scss'
 
-interface CardProps extends BaseComponentProps {}
+type CardProps = BaseComponentProps
 
-export const Card: React.SFC<CardProps> = props => {
+export function Card (props: CardProps) {
     const { className, style, children } = props
     return (
         <div className={classnames('card', className)} style={style}>

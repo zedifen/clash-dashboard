@@ -1,8 +1,9 @@
-import React, { useState, useLayoutEffect } from 'react'
+import React, { useLayoutEffect } from 'react'
 import classnames from 'classnames'
 import { unmountComponentAtNode, render } from 'react-dom'
 import { Icon } from '@components'
 import { noop } from '@lib/helper'
+import { useVisible } from '@lib/hook'
 import './style.scss'
 
 const TYPE_ICON_MAP = {
@@ -40,17 +41,17 @@ export function Message (props: MessageProps) {
         duration = 1500
     } = props
 
-    const [visible, setVisible] = useState(false)
+    const { visible, show, hide } = useVisible()
 
     useLayoutEffect(() => {
-        window.setTimeout(() => setVisible(true), 0)
+        window.setTimeout(() => show(), 0)
 
         const id = window.setTimeout(() => {
-            setVisible(false)
+            hide()
             onClose()
         }, duration)
         return () => window.clearTimeout(id)
-    }, [])
+    }, [duration, hide, onClose, show])
 
     return (
         <div
@@ -62,30 +63,6 @@ export function Message (props: MessageProps) {
         </div>
     )
 }
-
-export const info = (
-    content: string,
-    duration?: number,
-    onClose?: typeof noop
-) => showMessage({ type: 'info', content, duration, onClose })
-
-export const success = (
-    content: string,
-    duration?: number,
-    onClose?: typeof noop
-) => showMessage({ type: 'success', content, duration, onClose })
-
-export const warning = (
-    content: string,
-    duration?: number,
-    onClose?: typeof noop
-) => showMessage({ type: 'warning', content, duration, onClose })
-
-export const error = (
-    content: string,
-    duration?: number,
-    onClose?: typeof noop
-) => showMessage({ type: 'error', content, duration, onClose })
 
 export function showMessage (args: ArgsProps) {
     // create container element
@@ -113,3 +90,27 @@ export function showMessage (args: ArgsProps) {
 
     render(<Message {...props} />, container)
 }
+
+export const info = (
+    content: string,
+    duration?: number,
+    onClose?: typeof noop
+) => showMessage({ type: 'info', content, duration, onClose })
+
+export const success = (
+    content: string,
+    duration?: number,
+    onClose?: typeof noop
+) => showMessage({ type: 'success', content, duration, onClose })
+
+export const warning = (
+    content: string,
+    duration?: number,
+    onClose?: typeof noop
+) => showMessage({ type: 'warning', content, duration, onClose })
+
+export const error = (
+    content: string,
+    duration?: number,
+    onClose?: typeof noop
+) => showMessage({ type: 'error', content, duration, onClose })

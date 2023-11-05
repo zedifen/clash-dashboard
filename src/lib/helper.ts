@@ -6,28 +6,13 @@ export function setLocalStorageItem (key: string, value: string) {
     return window.localStorage.setItem(key, value)
 }
 
-export function removeLocalStorageItem (key: string) {
-    return window.localStorage.removeItem(key)
-}
-
 export function noop () {}
 
-/**
- * to return Promise<[T, Error]>
- * @param {Promise<T>} promise
- */
-export async function to <T, E = Error> (promise: Promise<T>): Promise<[T, E]> {
-    try {
-        const ret = await promise
-        return [ret, null as E]
-    } catch (e) {
-        return [null as T, e]
-    }
+export function getSearchParam(key: string) {
+    return new URLSearchParams(window.location.search).get(key)
 }
 
-export type Partial<T> = { [P in keyof T]?: T[P] }
-
-export function partition<T> (arr: T[], fn: (T) => boolean): [T[], T[]] {
+export function partition<T> (arr: T[], fn: (arg: T) => boolean): [T[], T[]] {
     const left: T[] = []
     const right: T[] = []
     for (const item of arr) {

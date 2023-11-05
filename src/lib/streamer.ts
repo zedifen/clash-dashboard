@@ -1,16 +1,18 @@
-import { to } from '@lib/helper'
 import EventEmitter from 'eventemitter3'
+import { SetRequired } from 'type-fest'
+import { ResultAsync } from 'neverthrow'
 
 export interface Config {
     url: string
-    headers?: { [key: string]: string }
+    useWebsocket: boolean
+    token?: string
     bufferLength?: number
     retryInterval?: number
 }
 
 export class StreamReader<T> {
     protected EE = new EventEmitter()
-    protected config: Config
+    protected config: SetRequired<Config, 'bufferLength' | 'retryInterval'>
     protected innerBuffer: T[] = []
     protected isClose = false
 
@@ -24,39 +26,68 @@ export class StreamReader<T> {
             config
         )
 
-        this.loop()
+        this.config.useWebsocket
+            ? this.websocketLoop()
+            : this.loop()
+    }
+
+    protected websocketLoop () {
+        const url = new URL(this.config.url)
+        url.protocol = url.protocol === 'http:' ? 'ws:' : 'wss:'
+        url.searchParams.set('token', this.config.token ?? '')
+
+        const connection = new WebSocket(url.toString())
+        connection.addEventListener('message', msg => {
+            const data = JSON.parse(msg.data)
+            this.EE.emit('data', [data])
+            if (this.config.bufferLength > 0) {
+                this.innerBuffer.push(data)
+                if (this.innerBuffer.length > this.config.bufferLength) {
+                    this.innerBuffer.splice(0, this.innerBuffer.length - this.config.bufferLength)
+                }
+            }
+        })
+
+        connection.addEventListener('close', () => setTimeout(this.websocketLoop, this.config.retryInterval))
+        connection.addEventListener('error', err => {
+            this.EE.emit('error', err)
+            setTimeout(this.websocketLoop, this.config.retryInterval)
+        })
     }
 
     protected async loop () {
-        const [resp, err] = await to(fetch(
+        const result = await ResultAsync.fromPromise(fetch(
             this.config.url,
             {
                 mode: 'cors',
-                headers: this.config.headers
+                headers: this.config.token ? { Authorization: `Bearer ${this.config.token}` } : {}
             }
-        ))
-        if (err) {
-            this.retry(err)
+        ), e => e as Error)
+        if (result.isErr()) {
+            this.retry(result.error)
+            return
+        } else if (!result.value.body) {
+            this.retry(new Error('fetch body error'))
             return
         }
 
-        const reader = resp.body.getReader()
+        const reader = result.value.body.getReader()
         const decoder = new TextDecoder()
         while (true) {
             if (this.isClose) {
                 break
             }
 
-            const [{ value }, err] = await to(reader.read())
-            if (err) {
-                this.retry(err)
+            const result = await ResultAsync.fromPromise(reader?.read(), e => e as Error)
+            if (result.isErr()) {
+                this.retry(result.error)
                 break
             }
 
-            const lines = decoder.decode(value).trim().split('\n')
+            const lines = decoder.decode(result.value.value).trim().split('\n')
             const data = lines.map(l => JSON.parse(l))
             this.EE.emit('data', data)
-            if (this.config.bufferLength > 0) {
+            if (this.config.bufferLength! > 0) {
                 this.innerBuffer.push(...data)
                 if (this.innerBuffer.length > this.config.bufferLength) {
                     this.innerBuffer.splice(0, this.innerBuffer.length - this.config.bufferLength)
@@ -65,18 +96,18 @@ export class StreamReader<T> {
         }
     }
 
-    protected retry (err) {
+    protected retry (err: Error) {
         if (!this.isClose) {
             this.EE.emit('error', err)
             window.setTimeout(this.loop, this.config.retryInterval)
         }
     }
 
-    subscribe<T> (event: string, callback: (data: T) => void) {
+    subscribe (event: string, callback: (data: T[]) => void) {
         this.EE.addListener(event, callback)
     }
 
-    unsubscribe<T> (event: string, callback: (data: T) => void) {
+    unsubscribe (event: string, callback: (data: T[]) => void) {
         this.EE.removeListener(event, callback)
     }
 

@@ -8,17 +8,17 @@
 <h4 align="center">Web Dashboard for Clash, now host on ClashX</h4>
 
 <p align="center">
-    <a href="https://travis-ci.org/Dreamacro/clash-dashboard">
-        <img src="https://travis-ci.org/Dreamacro/clash-dashboard.svg?branch=master" alt="Travis-CI">
+    <a href="https://github.com/Dreamacro/clash-dashboard/actions">
+        <img src="https://img.shields.io/github/workflow/status/Dreamacro/clash-dashboard/Deploy?style=flat-square" alt="Github Actions">
     </a>
 </p>
 
 ## Features
 
-- All ClashX configurations
-- Manage Proxies
-- Manage Proxy Groups
-- Realtime Log
+  - All ClashX configurations
+  - Manage Proxies
+  - Manage Proxy Groups
+  - Realtime Log
 
 ## Progress
 
@@ -42,13 +42,13 @@ defaults delete com.west2online.ClashX webviewUrl
 This command will start Clash Dashboard at `http://localhost:8080/`
 
 ```bash
-npm start
+yarn start
 ```
 
 ### Build for production
 
 ```bash
-npm run build
+yarn build
 ```
 
 ## Contributors

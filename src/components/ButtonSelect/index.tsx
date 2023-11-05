@@ -3,20 +3,20 @@ import { BaseComponentProps } from '@models/BaseProps'
 import classnames from 'classnames'
 import './style.scss'
 
-export interface ButtonSelectOptions {
-    label: string,
-    value: any
+export interface ButtonSelectOptions<T = string> {
+    label: string
+    value: T
 }
 
-export interface ButtonSelectProps extends BaseComponentProps {
+export interface ButtonSelectProps<T = string> extends BaseComponentProps {
     // options
-    options: ButtonSelectOptions[]
+    options: ButtonSelectOptions<T>[]
 
     // active value
-    value: any
+    value: T
 
     // select callback
-    onSelect?: (value: any) => void
+    onSelect?: (value: T) => void
 }
 
 export function ButtonSelect (props: ButtonSelectProps) {
@@ -30,7 +30,7 @@ export function ButtonSelect (props: ButtonSelectProps) {
                         value={option.value}
                         key={option.value}
                         className={classnames('button-select-options', { actived: value === option.value })}
-                        onClick={() => onSelect(option.value)}>
+                        onClick={() => onSelect?.(option.value)}>
                         { option.label }
                     </button>
                 ))

@@ -46,11 +46,13 @@ declare global {
         /**
          * Global jsbridge init callback
          */
-        WVJBCallbacks?: Function[]
+        WVJBCallbacks?: JsBridgeCallback[]
 
     }
 
 }
+
+type JsBridgeCallback = (jsbridge: JsBridgeAPI | null) => void
 
 /**
  * Check if perched in ClashX Runtime
@@ -62,25 +64,23 @@ export function isClashX () {
 /**
  * Closure save jsbridge instance
  */
-export let jsBridge: JsBridge = null
+export let jsBridge: JsBridge | null = null
 
 /**
  * JsBridge class
  */
 export class JsBridge {
+    instance: JsBridgeAPI | null = null
 
-    instance: JsBridgeAPI = null
-
-    constructor (callback = jsbridge => {}) {
+    constructor (callback: () => void) {
         if (window.WebViewJavascriptBridge) {
             this.instance = window.WebViewJavascriptBridge
-            callback(this.instance)
         }
 
         // init jsbridge
         this.initBridge(jsBridge => {
             this.instance = jsBridge
-            callback(jsBridge)
+            callback()
         })
     }
 
@@ -89,12 +89,12 @@ export class JsBridge {
      * @param {Function} cb callback when jsbridge initialized
      * @see https://github.com/marcuswestin/WebViewJavascriptBridge
      */
-    private initBridge (callback) {
+    private initBridge (callback: JsBridgeCallback) {
         /**
          * You need check if inClashX first
          */
         if (!isClashX()) {
-            return callback(null)
+            return callback?.(null)
         }
 
         if (window.WebViewJavascriptBridge) {
@@ -117,7 +117,7 @@ export class JsBridge {
 
     public callHandler<T> (handleName: string, data?: any) {
         return new Promise<T>((resolve) => {
-            this.instance.callHandler(
+            this.instance?.callHandler(
                 handleName,
                 data,
                 resolve
@@ -170,9 +170,10 @@ export class JsBridge {
     }
 }
 
-export function setupJsBridge (callback) {
+export function setupJsBridge (callback: () => void) {
     if (jsBridge) {
-        return callback(jsBridge)
+        callback()
+        return
     }
 
     jsBridge = new JsBridge(callback)

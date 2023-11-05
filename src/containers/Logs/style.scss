@@ -1,10 +1,3 @@
-.logs-card {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    margin-top: 10px;
-}
-
 .logs-panel {
     display: flex;
     flex-direction: column;
@@ -13,19 +6,9 @@
     list-style: none;
     padding: 10px;
     border-radius: 2px;
-    background-color: #f3f6f9;
+    background-color: $color-gray-light;
     font-size: 12px;
     color: #73808f;
     overflow-y: auto;
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-
-    li {
-        line-height: 20px;
-        display: inline-block;
-    }
-}
-
-.logs-panel-time {
-    margin-right: 10px;
-    color: #adb7c3;
 }

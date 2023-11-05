@@ -1,45 +1,87 @@
+/* eslint-disable no-redeclare */
 import { Draft } from 'immer'
 import { useImmer } from 'use-immer'
-import { createContainer } from 'unstated-next'
+import { useRef, useEffect, useState, useMemo } from 'react'
 
-export function useObject<T extends object> (initialValue: T) {
-    let [copy, set] = useImmer(initialValue)
+import { noop } from '@lib/helper'
 
-    function setSingle<K extends keyof Draft<T>> (key: K, value: Draft<T>[K]) {
-        set(draft => {
-            draft[key] = value
-        })
-    }
+export function useObject<T extends Record<string, unknown>> (initialValue: T) {
+    const [copy, rawSet] = useImmer(initialValue)
 
-    function setMulti<K extends keyof Draft<T>, U extends keyof T> (newValue: Partial<T>) {
-        set((draft: Draft<T>) => {
-            for (const key of Object.keys(newValue)) {
-                draft[key as K] = newValue[key as U] as any
+    const set = useMemo(() => {
+        function set (data: Partial<T>): void
+        function set (f: (draft: Draft<T>) => void | T): void
+        function set<K extends keyof Draft<T>> (key: K, value: Draft<T>[K]): void
+        function set<K extends keyof Draft<T>> (data: any, value?: Draft<T>[K]): void {
+            if (typeof data === 'string') {
+                rawSet(draft => {
+                    const key = data as K
+                    const v = value
+                    draft[key] = v!
+                })
+            } else if (typeof data === 'function') {
+                rawSet(data)
+            } else if (typeof data === 'object') {
+                rawSet((draft: Draft<T>) => {
+                    const obj = data as Draft<T>
+                    for (const key of Object.keys(obj)) {
+                        const k = key as keyof Draft<T>
+                        draft[k] = obj[k]
+                    }
+                })
             }
-        })
-    }
+        }
+        return set
+    }, [rawSet])
 
-    return { value: copy, setSingle, setMulti, set }
+    return [copy, set] as [T, typeof set]
 }
 
-type containerFn<Value, State = void> = (initialState?: State) => Value
+export function useInterval (callback: () => void, delay: number) {
+    const savedCallback = useRef(noop)
 
-export function composeContainer<T, C = containerFn<T>, U = { [key: string]: C }> (mapping: U) {
-    function Global () {
-        return Object.keys(mapping).reduce((obj, key) => {
-            obj[key] = mapping[key]()
-            return obj
-        }, {}) as { [K in keyof U]: T }
-    }
+    useEffect(() => {
+        savedCallback.current = callback
+    }, [callback])
 
-    const allContainer = createContainer(Global)
-    return {
-        Provider: allContainer.Provider,
-        containers: Object.keys(mapping).reduce((obj, key) => {
-            obj[key] = function () {
-                return allContainer.useContainer()[key]
+    useEffect(
+        () => {
+            const handler = () => savedCallback.current()
+
+            if (delay !== null) {
+                const id = setInterval(handler, delay)
+                return () => clearInterval(id)
             }
-            return obj
-        }, {}) as { [K in keyof U]: U[K] }
+        },
+        [delay]
+    )
+}
+
+export function useRound<T> (list: T[], defidx = 0) {
+    if (list.length < 2) {
+        throw new Error('List requires at least two elements')
     }
+
+    const [state, setState] = useState(defidx)
+
+    function next () {
+        setState((state + 1) % list.length)
+    }
+
+    const current = useMemo(() => list[state], [list, state])
+
+    return { current, next }
+}
+
+export function useVisible (initial = false) {
+    const [visible, setVisible] = useState(initial)
+
+    function hide () {
+        setVisible(false)
+    }
+
+    function show () {
+        setVisible(true)
+    }
+    return { visible, hide, show }
 }

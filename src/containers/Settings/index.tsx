@@ -1,78 +1,73 @@
-import React, { useEffect } from 'react'
-import { Header, Card, Row, Col, Switch, ButtonSelect, ButtonSelectOptions, Input, Icon } from '@components'
-import { containers } from '@stores'
+import React, { useEffect, useMemo } from 'react'
+import classnames from 'classnames'
+import { capitalize } from 'lodash-es'
+import { Header, Card, Switch, ButtonSelect, ButtonSelectOptions, Input } from '@components'
+import { useI18n, useClashXData, useAPIInfo, useGeneral, useIdentity, useVersion } from '@stores'
 import { updateConfig } from '@lib/request'
 import { useObject } from '@lib/hook'
-import { to } from '@lib/helper'
-import { isClashX, jsBridge } from '@lib/jsBridge'
+import { jsBridge } from '@lib/jsBridge'
+import { Lang } from '@i18n'
 import './style.scss'
 
 const languageOptions: ButtonSelectOptions[] = [{ label: '中文', value: 'zh_CN' }, { label: 'English', value: 'en_US' }]
 
-async function handleStartAtLoginChange (state: boolean) {
-    await jsBridge.setStartAtLogin(state)
-}
-
-async function handleSetSystemProxy (state: boolean) {
-    await jsBridge.setSystemProxy(state)
-}
-
 export default function Settings () {
-    const { data: clashXData, fetch: fetchClashXData } = containers.useClashXData()
-    const { data, fetch, unauthorized: { show } } = containers.useData()
-    const { data: apiInfo } = containers.useAPIInfo()
-    const { useTranslation, setLang, lang } = containers.useI18n()
-    const { t } = useTranslation('Settings')
-    const { value: info, setSingle } = useObject({
+    const { premium } = useVersion()
+    const { data: clashXData, update: fetchClashXData } = useClashXData()
+    const { general, update: fetchGeneral } = useGeneral()
+    const { set: setIdentity } = useIdentity()
+    const { data: apiInfo } = useAPIInfo()
+    const { translation, setLang, lang } = useI18n()
+    const { t } = translation('Settings')
+    const [info, set] = useObject({
         socks5ProxyPort: 7891,
         httpProxyPort: 7890,
-        isClashX: false
+        mixedProxyPort: 0
     })
 
     useEffect(() => {
-        fetch()
-        if (isClashX()) {
-            fetchClashXData().then(() => setSingle('isClashX', true))
-        }
-    }, [])
-
-    useEffect(() => {
-        setSingle('socks5ProxyPort', data.general.socksPort)
-        setSingle('httpProxyPort', data.general.port)
-    }, [data])
+        set('socks5ProxyPort', general?.socksPort ?? 0)
+        set('httpProxyPort', general?.port ?? 0)
+        set('mixedProxyPort', general?.mixedPort ?? 0)
+    }, [general, set])
 
     async function handleProxyModeChange (mode: string) {
-        const [, err] = await to(updateConfig({ mode }))
-        if (!err) {
-            fetch()
-        }
+        await updateConfig({ mode })
+        await fetchGeneral()
     }
 
-    function changeLanguage (language: string) {
+    async function handleStartAtLoginChange (state: boolean) {
+        await jsBridge?.setStartAtLogin(state)
+        fetchClashXData()
+    }
+
+    async function handleSetSystemProxy (state: boolean) {
+        await jsBridge?.setSystemProxy(state)
+        fetchClashXData()
+    }
+
+    function changeLanguage (language: Lang) {
         setLang(language)
     }
 
     async function handleHttpPortSave () {
-        const [, err] = await to(updateConfig({ 'port': info.httpProxyPort }))
-        if (!err) {
-            await fetch()
-            setSingle('httpProxyPort', data.general.port)
-        }
+        await updateConfig({ port: info.httpProxyPort })
+        await fetchGeneral()
     }
 
     async function handleSocksPortSave () {
-        const [, err] = await to(updateConfig({ 'socks-port': info.socks5ProxyPort }))
-        if (!err) {
-            await fetch()
-            setSingle('socks5ProxyPort', data.general.socksPort)
-        }
+        await updateConfig({ 'socks-port': info.socks5ProxyPort })
+        await fetchGeneral()
+    }
+
+    async function handleMixedPortSave () {
+        await updateConfig({ 'mixed-port': info.mixedProxyPort })
+        await fetchGeneral()
     }
 
     async function handleAllowLanChange (state: boolean) {
-        const [, err] = await to(updateConfig({ 'allow-lan': state }))
-        if (!err) {
-            await fetch()
-        }
+        await updateConfig({ 'allow-lan': state })
+        await fetchGeneral()
     }
 
     const {
@@ -80,127 +75,116 @@ export default function Settings () {
         port: externalControllerPort
     } = apiInfo
 
-    const { allowLan, mode } = data.general
-    const {
-        startAtLogin,
-        systemProxy
-    } = clashXData
+    const { allowLan, mode } = general
 
-    const proxyModeOptions: ButtonSelectOptions[] = [
-        { label: t('values.global'), value: 'Global' },
-        { label: t('values.rules'), value: 'Rule' },
-        { label: t('values.direct'), value: 'Direct' }
-    ]
+    const startAtLogin = clashXData?.startAtLogin ?? false
+    const systemProxy = clashXData?.systemProxy ?? false
+    const isClashX = clashXData?.isClashX ?? false
+
+    const proxyModeOptions = useMemo(() => {
+        const options = [
+            { label: t('values.global'), value: 'Global' },
+            { label: t('values.rules'), value: 'Rule' },
+            { label: t('values.direct'), value: 'Direct' }
+        ]
+        if (premium) {
+            options.push({ label: t('values.script'), value: 'Script' })
+        }
+        return options
+    }, [t, premium])
 
     return (
         <div className="page">
             <Header title={t('title')} />
             <Card className="settings-card">
-                <Row gutter={24} align="middle">
-                    <Col span={12}>
-                        <Col span={14} offset={1}>
-                            <span className="label">{t('labels.startAtLogin')}</span>
-                        </Col>
-                        <Col span={8} className="value-column">
-                            <Switch disabled={!isClashX} checked={startAtLogin} onChange={handleStartAtLoginChange} />
-                        </Col>
-                    </Col>
-                    <Col span={12}>
-                        <Col span={8} offset={1}>
-                            <span className="label">{t('labels.language')}</span>
-                        </Col>
-                        <Col span={14} className="value-column">
-                            <ButtonSelect options={languageOptions} value={lang} onSelect={changeLanguage} />
-                        </Col>
-                    </Col>
-                </Row>
-                <Row gutter={24} align="middle">
-                    <Col span={12}>
-                        <Col span={14} offset={1}>
-                            <span className="label">{t('labels.setAsSystemProxy')}</span>
-                        </Col>
-                        <Col span={8} className="value-column">
-                            <Switch
-                                disabled={!isClashX}
-                                checked={systemProxy}
-                                onChange={handleSetSystemProxy}
-                            />
-                        </Col>
-                    </Col>
-                    <Col span={12}>
-                        <Col span={14} offset={1}>
-                            <span className="label">{t('labels.allowConnectFromLan')}</span>
-                        </Col>
-                        <Col span={8} className="value-column">
-                            <Switch
-                                checked={allowLan}
-                                onChange={handleAllowLanChange}
-                            />
-                        </Col>
-                    </Col>
-                </Row>
+                <div className="flex flex-wrap">
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.startAtLogin')}</span>
+                        <Switch disabled={!clashXData?.isClashX} checked={startAtLogin} onChange={handleStartAtLoginChange} />
+                    </div>
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.language')}</span>
+                        <ButtonSelect options={languageOptions} value={lang} onSelect={(lang) => changeLanguage(lang as Lang)} />
+                    </div>
+                </div>
+                <div className="flex flex-wrap">
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.setAsSystemProxy')}</span>
+                        <Switch
+                            disabled={!isClashX}
+                            checked={systemProxy}
+                            onChange={handleSetSystemProxy}
+                        />
+                    </div>
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.allowConnectFromLan')}</span>
+                        <Switch checked={allowLan} onChange={handleAllowLanChange} />
+                    </div>
+                </div>
             </Card>
 
             <Card className="settings-card">
-                <Row gutter={24} align="middle">
-                    <Col span={12}>
-                        <Col span={8} offset={1}>
-                            <span className="label">{t('labels.proxyMode')}</span>
-                        </Col>
-                        <Col span={14} className="value-column">
-                            <ButtonSelect
-                                options={proxyModeOptions}
-                                value={mode}
-                                onSelect={handleProxyModeChange}
-                            />
-                        </Col>
-                    </Col>
-                    <Col span={12}>
-                        <Col span={14} offset={1}>
-                            <span className="label">{t('labels.socks5ProxyPort')}</span>
-                        </Col>
-                        <Col span={8}>
-                            <Input
-                                value={info.socks5ProxyPort}
-                                onChange={socks5ProxyPort => setSingle('socks5ProxyPort', parseInt(socks5ProxyPort, 10))}
-                                onBlur={handleSocksPortSave}
-                            />
-                        </Col>
-                    </Col>
-                </Row>
-                <Row gutter={24} align="middle">
-                    <Col span={12}>
-                        <Col span={14} offset={1}>
-                            <span className="label">{t('labels.httpProxyPort')}</span>
-                        </Col>
-                        <Col span={8}>
-                            <Input
-                                value={info.httpProxyPort}
-                                onChange={httpProxyPort => setSingle('httpProxyPort', parseInt(httpProxyPort, 10))}
-                                onBlur={handleHttpPortSave}
-                            />
-                        </Col>
-                    </Col>
-                    <Col span={12}>
-                        <Col span={12} offset={1}>
-                            <span className="label">{t('labels.externalController')}</span>
-                        </Col>
-                        <Col className="external-controller" span={10}>
-                            <span className="modify-btn" onClick={show}>
-                                {`${externalControllerHost}:${externalControllerPort}`}
-                            </span>
-                        </Col>
-                    </Col>
-                </Row>
+                <div className="flex flex-wrap">
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.proxyMode')}</span>
+                        <ButtonSelect
+                            options={proxyModeOptions}
+                            value={capitalize(mode)}
+                            onSelect={handleProxyModeChange}
+                        />
+                    </div>
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.socks5ProxyPort')}</span>
+                        <Input
+                            className="w-28"
+                            disabled={isClashX}
+                            value={info.socks5ProxyPort}
+                            onChange={socks5ProxyPort => set('socks5ProxyPort', +socks5ProxyPort)}
+                            onBlur={handleSocksPortSave}
+                        />
+                    </div>
+                </div>
+                <div className="flex flex-wrap">
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.httpProxyPort')}</span>
+                        <Input
+                            className="w-28"
+                            disabled={isClashX}
+                            value={info.httpProxyPort}
+                            onChange={httpProxyPort => set('httpProxyPort', +httpProxyPort)}
+                            onBlur={handleHttpPortSave}
+                        />
+                    </div>
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.mixedProxyPort')}</span>
+                        <Input
+                            className="w-28"
+                            disabled={isClashX}
+                            value={info.mixedProxyPort}
+                            onChange={mixedProxyPort => set('mixedProxyPort', +mixedProxyPort)}
+                            onBlur={handleMixedPortSave}
+                        />
+                    </div>
+                </div>
+                <div className="flex flex-wrap">
+                    <div className="w-full flex md:w-1/2 items-center justify-between px-8 py-3">
+                        <span className="label font-bold">{t('labels.externalController')}</span>
+                        <span
+                            className={classnames({ 'modify-btn': !isClashX }, 'external-controller')}
+                            onClick={() => !isClashX && setIdentity(false)}>
+                            {`${externalControllerHost}:${externalControllerPort}`}
+                        </span>
+                    </div>
+                    <div className="w-1/2 px-8"></div>
+                </div>
             </Card>
-
-            <Card className="clash-version" style={{ display: 'none' }}>
+            {/* <Card className="clash-version hidden">
                 <span className="check-icon">
                     <Icon type="check" size={20} />
                 </span>
                 <p className="version-info">{t('versionString')}</p>
                 <span className="check-update-btn">{t('checkUpdate')}</span>
-            </Card>
+            </Card> */}
         </div>
     )
 }

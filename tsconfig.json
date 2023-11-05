@@ -1,16 +1,19 @@
 {
     "compilerOptions": {
-        "outDir": "./dist/",
-        "sourceMap": true,
+        "target": "es2020",
+        "lib": [
+            "dom",
+        ],
+        "skipLibCheck": true,
         "esModuleInterop": true,
-        "noImplicitAny": false,
-        "noUnusedLocals": true,
-        "module": "commonjs",
-        "target": "es5",
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "module": "esnext",
+        "moduleResolution": "node",
+        "isolatedModules": true,
+        "noEmit": true,
         "jsx": "react",
-        "lib": ["es5", "es6", "dom", "es2017"],
-        "experimentalDecorators": true,
-        "downlevelIteration": true,
         "baseUrl": ".",
         "paths": {
             "@assets": ["src/assets"],
@@ -32,6 +35,6 @@
         }
     },
     "include": [
-        "./src/**/*"
+        "src"
     ]
 }

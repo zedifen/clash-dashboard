@@ -64,20 +64,10 @@ export interface Config {
 
 }
 
-export interface ClashXData {
-    startAtLogin: boolean
-    systemProxy: boolean
-}
-
-export interface APIInfo {
-    hostname: string
-    port: string
-    secret?: string
-}
-
 export interface Data {
+    version?: string
 
-    general?: {
+    general: {
 
         /**
          * http proxy port
@@ -90,6 +80,11 @@ export interface Data {
         socksPort?: number
 
         /**
+         * mixed porxy port
+         */
+        mixedPort?: number
+
+        /**
          * redir proxy port
          */
         redirPort?: number
@@ -97,12 +92,12 @@ export interface Data {
         /**
          * proxy is allow lan
          */
-        allowLan?: boolean
+        allowLan: boolean
 
         /**
          * clash proxy mode
          */
-        mode?: string
+        mode: 'script' | 'rule' | 'direct' | 'global'
 
         /**
          * clash tty log level
@@ -114,5 +109,9 @@ export interface Data {
 
     proxyGroup?: API.Group[]
 
+    proxyProviders?: API.Provider[]
+
     rules?: API.Rule[]
+
+    proxyMap?: Map<string, API.Proxy>
 }

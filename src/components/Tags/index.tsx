@@ -1,5 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react'
-import { containers } from '@stores'
+import { useI18n } from '@stores'
 import { BaseComponentProps } from '@models'
 import { noop } from '@lib/helper'
 import classnames from 'classnames'
@@ -8,22 +8,23 @@ import './style.scss'
 interface TagsProps extends BaseComponentProps {
     data: string[]
     onClick: (name: string) => void
+    errSet?: Set<string>
     select: string
     rowHeight: number
     canClick: boolean
 }
 
 export function Tags (props: TagsProps) {
-    const { className, data, onClick, select, canClick, rowHeight: rawHeight } = props
+    const { className, data, onClick, select, canClick, errSet, rowHeight: rawHeight } = props
 
-    const { useTranslation } = containers.useI18n()
-    const { t } = useTranslation('Proxies')
+    const { translation } = useI18n()
+    const { t } = translation('Proxies')
     const [expand, setExpand] = useState(false)
     const [showExtend, setShowExtend] = useState(false)
 
-    const ulRef = useRef<HTMLUListElement>()
+    const ulRef = useRef<HTMLUListElement>(null)
     useLayoutEffect(() => {
-        setShowExtend(ulRef.current.offsetHeight > 30)
+        setShowExtend((ulRef?.current?.offsetHeight ?? 0) > 30)
     }, [])
 
     const rowHeight = expand ? 'auto' : rawHeight
@@ -35,7 +36,7 @@ export function Tags (props: TagsProps) {
 
     const tags = data
         .map(t => {
-            const tagClass = classnames({ 'tags-selected': select === t, 'can-click': canClick })
+            const tagClass = classnames({ 'tags-selected': select === t, 'cursor-pointer': canClick, error: errSet?.has(t) })
             return (
                 <li className={tagClass} key={t} onClick={() => handleClick(t)}>
                     { t }
@@ -44,13 +45,13 @@ export function Tags (props: TagsProps) {
         })
 
     return (
-        <div className={classnames('tags-container', className)} style={{ height: rowHeight }}>
+        <div className={classnames('flex items-start overflow-y-hidden', className)} style={{ height: rowHeight }}>
             <ul ref={ulRef} className={classnames('tags', { expand })}>
                 { tags }
             </ul>
             {
                 showExtend &&
-                <span className="tags-expand" onClick={toggleExtend}>{ expand ? t('collapseText') : t('expandText') }</span>
+                <span className="h-7 px-5 select-none cursor-pointer leading-7" onClick={toggleExtend}>{ expand ? t('collapseText') : t('expandText') }</span>
             }
         </div>
     )

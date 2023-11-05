@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react'
 import { useObject } from '@lib/hook'
-import { Modal, Input, Row, Col, Alert } from '@components'
-import { containers } from '@stores'
+import { Modal, Input, Alert } from '@components'
+import { useI18n, useAPIInfo, useIdentity } from '@stores'
 import './style.scss'
 
 export default function ExternalController () {
-    const { useTranslation } = containers.useI18n()
-    const { t } = useTranslation('Settings')
-    const { data: info, update, fetch } = containers.useAPIInfo()
-    const { unauthorized: { hidden, visible } } = containers.useData()
-    const { value, setMulti, setSingle } = useObject({
+    const { translation } = useI18n()
+    const { t } = translation('Settings')
+    const { data: info, update, fetch } = useAPIInfo()
+    const { identity, set: setIdentity } = useIdentity()
+    const [value, set] = useObject({
         hostname: '',
         port: '',
         secret: ''
@@ -17,11 +17,11 @@ export default function ExternalController () {
 
     useEffect(() => {
         fetch()
-    }, [])
+    }, [fetch])
 
     useEffect(() => {
-        setMulti({ hostname: info.hostname, port: info.port, secret: info.secret })
-    }, [info])
+        set({ hostname: info.hostname, port: info.port, secret: info.secret })
+    }, [info, set])
 
     function handleOk () {
         const { hostname, port, secret } = value
@@ -30,48 +30,45 @@ export default function ExternalController () {
 
     return (
         <Modal
-            show={visible}
+            show={!identity}
             title={t('externalControllerSetting.title')}
             bodyClassName="external-controller"
-            onClose={hidden}
+            onClose={() => setIdentity(true)}
             onOk={handleOk}
         >
             <Alert type="info" inside={true}>
                 <p>{t('externalControllerSetting.note')}</p>
             </Alert>
-            <Row gutter={24} align="middle">
-                <Col span={4} className="title">{t('externalControllerSetting.host')}</Col>
-                <Col span={20} className="form">
-                    <Input
-                        align="left"
-                        inside={true}
-                        value={value.hostname}
-                        onChange={hostname => setSingle('hostname', hostname)}
-                    />
-                </Col>
-            </Row>
-            <Row gutter={24} align="middle">
-                <Col span={4} className="title">{t('externalControllerSetting.port')}</Col>
-                <Col span={20} className="form">
-                    <Input
-                        align="left"
-                        inside={true}
-                        value={value.port}
-                        onChange={port => setSingle('port', port)}
-                    />
-                </Col>
-            </Row>
-            <Row gutter={24} align="middle">
-                <Col span={4} className="title">{t('externalControllerSetting.secret')}</Col>
-                <Col span={20} className="form">
-                    <Input
-                        align="left"
-                        inside={true}
-                        value={value.secret}
-                        onChange={secret => setSingle('secret', secret)}
-                    />
-                </Col>
-            </Row>
+            <div className="flex items-center">
+                <span className="md:my-3 w-14 my-1 font-bold">{t('externalControllerSetting.host')}</span>
+                <Input
+                    className="md:my-3 flex-1 my-1"
+                    align="left"
+                    inside={true}
+                    value={value.hostname}
+                    onChange={hostname => set('hostname', hostname)}
+                />
+            </div>
+            <div className="flex items-center">
+                <div className="md:my-3 w-14 my-1 font-bold">{t('externalControllerSetting.port')}</div>
+                <Input
+                    className="md:my-3 w-14 my-1 flex-1"
+                    align="left"
+                    inside={true}
+                    value={value.port}
+                    onChange={port => set('port', port)}
+                />
+            </div>
+            <div className="flex items-center">
+                <div className="md:my-3 w-14 my-1 font-bold">{t('externalControllerSetting.secret')}</div>
+                <Input
+                    className="md:my-3 w-14 my-1 flex-1"
+                    align="left"
+                    inside={true}
+                    value={value.secret}
+                    onChange={secret => set('secret', secret)}
+                />
+            </div>
         </Modal>
     )
 }
