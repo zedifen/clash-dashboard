@@ -9,14 +9,14 @@ import './style.scss'
 interface TagsProps extends BaseComponentProps {
     data: string[]
     onClick: (name: string) => void
-    errSet?: Set<string>
+    speedTest?: Record<string, number>
     select: string
     rowHeight: number
     canClick: boolean
 }
 
 export function Tags (props: TagsProps) {
-    const { className, data, onClick, select, canClick, errSet, rowHeight: rawHeight } = props
+    const { className, data, onClick, select, canClick, speedTest, rowHeight: rawHeight } = props
 
     const { translation } = useI18n()
     const { t } = translation('Proxies')
@@ -37,7 +37,23 @@ export function Tags (props: TagsProps) {
 
     const tags = data
         .map(t => {
-            const tagClass = classnames({ 'tags-selected': select === t, 'cursor-pointer': canClick, error: errSet?.has(t) })
+            const tagState = function () {
+                if (speedTest && speedTest[t]) {
+                    const speed = speedTest[t];
+                    if (0 <= speed && speed < 260) {
+                        return { good: true };
+                    } else if (260 <= speed && speed < 600) {
+                        return { normal: true };
+                    }
+                    return { bad: true };
+                }
+                return {}
+            } ();
+            const tagClass = classnames({
+                'tags-selected': select === t,
+                'cursor-pointer': canClick,
+                ...tagState,
+            })
             return (
                 <li className={tagClass} key={t} onClick={() => handleClick(t)}>
                     { t }
