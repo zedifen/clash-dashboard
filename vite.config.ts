@@ -17,9 +17,10 @@ export default defineConfig(
             UnoCSS(),
             VitePWA({
                 injectRegister: 'inline',
+                includeAssets: ['./Icon.png'],
                 manifest: {
                     icons: [{
-                        src: '//cdn.jsdelivr.net/gh/Dreamacro/clash-dashboard/src/assets/Icon.png',
+                        src: './Icon.png',
                         sizes: '512x512',
                         type: 'image/png',
                     }],
