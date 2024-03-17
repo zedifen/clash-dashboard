@@ -164,7 +164,7 @@ export class Client {
         return await this.axiosClient.get<{ delay: number }>(`proxies/${encodeURIComponent(name)}/delay`, {
             params: {
                 timeout: 5000,
-                url: 'http://www.gstatic.com/generate_204',
+                url: 'https://www.gstatic.com/generate_204',
             },
         })
     }
