@@ -34,17 +34,21 @@ export function Group (props: GroupProps) {
         }
     }
 
-    const errSet = useMemo(() => {
-        const set = new Set<string>()
+    const speedTest = useMemo(() => {
+        const res: Record<string, number> = {};
         for (const proxy of config.all) {
             const history = proxyMap.get(proxy)?.history
             const alive = proxyMap.get(proxy)?.alive
-            if (alive === false || (history?.length && history.slice(-1)[0].delay === 0)) {
-                set.add(proxy)
+            if (alive === false) {
+                res[proxy] = Infinity;
+            } else if (history === undefined || history.length === 0) {
+                continue;
+            } else {
+                const curr = history.slice(-1)[0];
+                res[proxy] = curr.meanDelay ? curr.meanDelay : curr.delay;
             }
         }
-
-        return set
+        return res;
     }, [config.all, proxyMap])
 
     const canClick = config.type === 'Selector'
@@ -59,7 +63,7 @@ export function Group (props: GroupProps) {
                     className="ml-5 md:ml-8"
                     data={config.all}
                     onClick={handleChangeProxySelected}
-                    errSet={errSet}
+                    speedTest={speedTest}
                     select={config.now}
                     canClick={canClick}
                     rowHeight={30} />

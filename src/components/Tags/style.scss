@@ -21,18 +21,26 @@ $height: 22px;
         margin: 3px 4px;
         font-size: 10px;
     }
+    
+    $tag-colors: (
+        'bad': $color-red,
+        'good': $color-green,
+        'normal': $color-orange
+        );
+        
+    @each $tag, $color in $tag-colors {
+        li.#{$tag} {
+            color: #fff;
+            background-color: $color;
+            border-color: $color;
 
-    li.error {
-        color: #fff;
-        background-color: $color-red;
-        border-color: $color-red;
-    }
-
-    li.tags-selected.error {
-        background: linear-gradient(135deg, $color-primary-dark, $color-red);
-        border: none;
-        height: $height + 2px;
-        padding: 0 7px;
+            &.tags-selected {
+                background: linear-gradient(135deg, $color-primary-dark, $color);
+                border: none;
+                height: $height + 2px;
+                padding: 0 7px;
+            }
+        }
     }
 
     .tags-selected {
