@@ -72,7 +72,7 @@ export function Proxy (props: ProxyProps) {
 
     const backgroundColor = hasError ? '#E5E7EB' : color
     return (
-        <div className={classnames('proxy-item', { 'opacity-50': hasError }, className)}>
+        <div onClick={speedTest} className={classnames('proxy-item', { 'opacity-50': hasError }, className)}>
             <div className="flex-1">
                 <span
                     className={classnames('rounded-sm py-[3px] px-1 text-[10px] text-white', { 'text-gray-600': hasError })}

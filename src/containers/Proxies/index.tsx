@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 
-import { Card, Header, Icon, Checkbox } from '@components'
-import EE from '@lib/event'
+import { Card, Header, Checkbox } from '@components'
 import { useRound } from '@lib/hook'
 import type * as API from '@lib/request'
 import { useI18n, useConfig, useProxy, useProxyProviders, useGeneral } from '@stores'
@@ -13,12 +12,6 @@ enum sortType {
     None,
     Asc,
     Desc,
-}
-
-const sortMap = {
-    [sortType.None]: 'sort',
-    [sortType.Asc]: 'sort-ascending',
-    [sortType.Desc]: 'sort-descending',
 }
 
 export function compareDesc (a: API.Proxy, b: API.Proxy) {
@@ -95,12 +88,6 @@ function ProxyProviders () {
 
 function Proxies () {
     const { proxies } = useProxy()
-    const { translation: useTranslation } = useI18n()
-    const { t } = useTranslation('Proxies')
-
-    function handleNotitySpeedTest () {
-        EE.notifySpeedTest()
-    }
 
     const { current: sort, next } = useRound(
         [sortType.Asc, sortType.Desc, sortType.None],
@@ -115,17 +102,11 @@ function Proxies () {
                 return proxies.slice()
         }
     }, [sort, proxies])
-    const handleSort = next
 
     return <>
         {
             sortedProxies.length !== 0 &&
             <div className="flex flex-col">
-                <Header title={t('title')}>
-                    <Icon className="ml-3" type={sortMap[sort]} onClick={handleSort} size={20} />
-                    <Icon className="ml-3" type="speed" size={20} />
-                    <span className="proxies-speed-test" onClick={handleNotitySpeedTest}>{t('speedTestText')}</span>
-                </Header>
                 <ul className="proxies-list">
                     {
                         sortedProxies.map(p => (
